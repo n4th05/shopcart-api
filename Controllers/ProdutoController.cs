@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using ShopCartAPI.Services;
 
 namespace ShopCartAPI.Controllers
 {
@@ -7,83 +7,65 @@ namespace ShopCartAPI.Controllers
     [ApiController]
     public class ProdutoController : ControllerBase
     {
-        static private List<Produto> produtos = new List<Produto>
+        private readonly IProdutoService _produtoService;
+
+        public ProdutoController(IProdutoService produtoService)
         {
-            new Produto
-            {
-                Id = 1,
-                Nome = "Cadeira Gamer"
-            },
-            new Produto
-            {
-                Id = 2,
-                Nome = "Mouse Sem Fio"
-            },
-            new Produto
-            {
-                Id = 3,
-                Nome = "Teclado Mecânico"
-            },
-            new Produto
-            {
-                Id = 4,
-                Nome = "Monitor 4K"
-            },
-            new Produto
-            {
-                Id = 5,
-                Nome = "Notebook Ultrafino"
-            }
-        };
+            _produtoService = produtoService;
+        }
+
         [HttpGet]
-        public ActionResult<List<Produto>> GetProdutos()
+        public async Task<ActionResult<IEnumerable<Produto>>> GetProdutos()
         {
+            var produtos = await _produtoService.GetAllProdutosAsync();
             return Ok(produtos);
         }
 
         [HttpGet("{id}")]
-        public ActionResult<Produto> GetProdutoById(int id)
+        public async Task<ActionResult<Produto>> GetProdutoById(int id)
         {
-            var produto = produtos.FirstOrDefault(p => p.Id == id);
-            if (produto is null)
+            var produto = await _produtoService.GetProdutoByIdAsync(id);
+            if (produto == null)
                 return NotFound();
-
             return Ok(produto);
         }
 
         [HttpPost]
-        public ActionResult<Produto> AddProduto(Produto newProduto)
+        public async Task<ActionResult<Produto>> CreateProduto(Produto produto)
         {
-            if (newProduto is null)
-                return BadRequest();
-
-            newProduto.Id = produtos.Max(p => p.Id) + 1;
-            produtos.Add(newProduto);
-            return CreatedAtAction(nameof(GetProdutoById), new { id = newProduto.Id }, newProduto);
+            var createdProduto = await _produtoService.CreateProdutoAsync(produto);
+            return CreatedAtAction(
+                nameof(GetProdutoById),
+                new { id = createdProduto.Id },
+                createdProduto
+            );
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdateProduto(int id, Produto updatesProduto)
+        public async Task<IActionResult> UpdateProduto(int id, Produto produto)
         {
-            var produto = produtos.FirstOrDefault(p => p.Id == id);
-            if (produto is null)
+            try
+            {
+                await _produtoService.UpdateProdutoAsync(id, produto);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
                 return NotFound();
-
-            produto.Nome = updatesProduto.Nome;
-
-            return NoContent();
+            }
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeleteProduto(int id)
+        public async Task<IActionResult> DeleteProduto(int id)
         {
+            try
             {
-                var produto = produtos.FirstOrDefault(p => p.Id == id);
-                if (produto is null)
-                    return NotFound();
-
-                produtos.Remove(produto);
+                await _produtoService.DeleteProdutoAsync(id);
                 return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
             }
         }
     }

@@ -11,7 +11,7 @@
         public int Id { get; set; }
         public Produto Produto { get; set; }
         public int Quantidade { get; set; }
-        public string UnidadeDeMedida { get; set; } 
+        public string UnidadeDeMedida { get; set; }
 
         public int GetQuantidade()
         {
@@ -47,11 +47,11 @@
     public class Carrinho
     {
         public int Id { get; set; }
-        public List<Item> ItensCarrinho { get; set; } 
+        public List<Item> ItensCarrinho { get; set; }
 
         public Carrinho()
         {
-            ItensCarrinho = new List<Item>(); 
+            ItensCarrinho = new List<Item>();
         }
 
         public int GetId()

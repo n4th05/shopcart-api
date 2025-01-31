@@ -23,7 +23,6 @@ namespace ShopCartAPI.Infrastructure
 
                 CREATE TABLE IF NOT EXISTS Carrinhos (
                     Id SERIAL PRIMARY KEY,
-                    Identificador INT NOT NULL
                 )";
 
             await connection.ExecuteAsync(createTablesScript);

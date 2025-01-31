@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using ShopCartAPI.Services;
+using ShopCartAPI.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ShopCartAPI.Controllers
 {
@@ -7,95 +10,108 @@ namespace ShopCartAPI.Controllers
     [ApiController]
     public class ItemController : ControllerBase
     {
-        static private List<Item> itens = new List<Item>
-        {
-            new Item
-            {
-                Id = 1,
-                Produto = new Produto { Id = 1, Nome = "Capa" },
-                UnidadeDeMedida = "unidade",
-                Quantidade = 5
-            },
-            new Item
-            {
-                Id = 2,
-                Produto = new Produto { Id = 2, Nome = "Mouse Sem Fio" },
-                UnidadeDeMedida = "unidade",
-                Quantidade = 10
-            },
-            new Item
-            {
-                Id = 3,
-                Produto = new Produto { Id = 3, Nome = "Teclado Mecânico" },
-                UnidadeDeMedida = "unidade",
-                Quantidade = 7
-            },
-            new Item
-            {
-                Id = 4,
-                Produto = new Produto { Id = 4, Nome = "Monitor 4K" },
-                UnidadeDeMedida = "unidade",
-                Quantidade = 3
-            },
-            new Item
-            {
-                Id = 5,
-                Produto = new Produto { Id = 5, Nome = "Notebook Ultrafino" },
-                UnidadeDeMedida = "unidade",
-                Quantidade = 2
-            }
-        };
+        private readonly IItemService _itemService;
 
+        public ItemController(IItemService itemService)
+        {
+            _itemService = itemService;
+        }
+
+        // GET: api/Item
         [HttpGet]
-        public ActionResult<List<Item>> GetItens()
+        public async Task<ActionResult<IEnumerable<Item>>> GetItens()
         {
-            return Ok(itens);
+            var items = await _itemService.GetAllItensAsync();
+            return Ok(items);
         }
 
-        [HttpGet("{id}")]
-        public ActionResult<Item> GetItemById(int id)
-        {
-            var item = itens.FirstOrDefault(i => i.Id == id);
-            if (item is null)
-                return NotFound();
-
-            return Ok(item);
-        }
-
+        // POST: api/Item
         [HttpPost]
-        public ActionResult<Item> AddItem(Item newItem)
+        public async Task<ActionResult<Item>> AddItem([FromBody] Item newItem)
         {
-            if (newItem is null)
-                return BadRequest();
+            if (newItem == null)
+                return BadRequest("Item data is required.");
 
-            newItem.Id = itens.Max(i => i.Id) + 1;
-            itens.Add(newItem);
-            return CreatedAtAction(nameof(GetItemById), new { id = newItem.Id }, newItem);
+            // Validação manual das propriedades do Item
+            if (newItem.Produto == null || newItem.Produto.Id <= 0)
+                return BadRequest("Produto ID is required and must be greater than 0.");
+
+            if (newItem.Quantidade <= 0)
+                return BadRequest("Quantidade must be greater than 0.");
+
+            if (string.IsNullOrWhiteSpace(newItem.UnidadeDeMedida))
+                return BadRequest("UnidadeDeMedida is required.");
+
+            try
+            {
+                var createdItem = await _itemService.CreateItemAsync(newItem);
+                return CreatedAtAction(nameof(GetItens), createdItem); // Alterado para retornar a lista de itens
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while creating the item: {ex.Message}");
+            }
         }
 
+        // PUT: api/Item/5
         [HttpPut("{id}")]
-        public IActionResult UpdateItem(int id, Item updatesItem)
+        public async Task<IActionResult> UpdateItem(int id, [FromBody] Item updatedItem)
         {
-            var item = itens.FirstOrDefault(i => i.Id == id);
-            if (item is null)
-                return NotFound();
+            if (id <= 0)
+                return BadRequest("ID must be greater than 0.");
 
-            item.Produto = updatesItem.Produto;
-            item.Quantidade = updatesItem.Quantidade;
-            item.UnidadeDeMedida = updatesItem.UnidadeDeMedida;
+            if (updatedItem == null)
+                return BadRequest("Item data is required.");
 
-            return NoContent();
+            // Validação manual das propriedades do Item
+            if (updatedItem.Produto == null || updatedItem.Produto.Id <= 0)
+                return BadRequest("Produto ID is required and must be greater than 0.");
+
+            if (updatedItem.Quantidade <= 0)
+                return BadRequest("Quantidade must be greater than 0.");
+
+            if (string.IsNullOrWhiteSpace(updatedItem.UnidadeDeMedida))
+                return BadRequest("UnidadeDeMedida is required.");
+
+            try
+            {
+                await _itemService.UpdateItemAsync(id, updatedItem);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while updating the item: {ex.Message}");
+            }
         }
 
+        // DELETE: api/Item/5
         [HttpDelete("{id}")]
-        public IActionResult DeleteItem(int id)
+        public async Task<IActionResult> DeleteItem(int id)
         {
-            var item = itens.FirstOrDefault(i => i.Id == id);
-            if (item is null)
-                return NotFound();
+            if (id <= 0)
+                return BadRequest("ID must be greater than 0.");
 
-            itens.Remove(item);
-            return NoContent();
+            try
+            {
+                await _itemService.DeleteItemAsync(id);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while deleting the item: {ex.Message}");
+            }
         }
     }
 }

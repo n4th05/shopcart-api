@@ -1,18 +1,19 @@
-using System.Data;
+using Npgsql;
 using Dapper;
-using ShopCartAPI.Infrastructure.Data; 
+using ShopCartAPI.Infrastructure.Data;
+using ShopCartAPI.Services;
+using ShopCartAPI.Models;
+using System.Data;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Adiciona os serviços de controle, como controllers e autorização
-builder.Services.AddControllers();
-
-// Adiciona a configuração de autorização
-builder.Services.AddAuthorization();
+// Definir política de CORS
+var corsPolicy = "_myAllowSpecificOrigins";
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy(corsPolicy, policy =>
     {
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
@@ -20,73 +21,52 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddSingleton(sp =>
-    new PostgresConnectionFactory(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    ));
 
+// Configurações de serviços
+builder.Services.AddControllers();
+builder.Services.AddScoped<IItemService, ItemService>();
+builder.Services.AddScoped<ICarrinhoService, CarrinhoService>();
+
+// Configurar conexão do banco de dados
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddSingleton<IDbConnectionFactory>(new PostgresConnectionFactory(connectionString));
+
+// Injeção de dependência dos serviços
+builder.Services.AddScoped<IProdutoService, ProdutoService>();
 
 var app = builder.Build();
 
-app.UseCors("AllowAll");
 
-app.UseHttpsRedirection();
-app.UseAuthorization();
-app.MapControllers();
-app.Run();
-
-
-// Inicialização do banco de dados
+// Inicializar banco de dados
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    try
-    {
-        var connectionFactory = services.GetRequiredService<PostgresConnectionFactory>();
-        using var connection = connectionFactory.CreateConnection();
+    var connectionFactory = scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>();
+    using var connection = connectionFactory.CreateConnection();
+    connection.Open();
 
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogInformation("Iniciando a criação das tabelas.");
-
-        await InitializeDatabase(connection);
-
-        logger.LogInformation("Tabelas criadas com sucesso.");
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while initializing the database.");
-        throw;
-    }
-}
-
-
-app.UseHttpsRedirection();
-app.UseAuthorization();
-app.MapControllers();
-app.Run();
-
-static async Task InitializeDatabase(IDbConnection connection)
-{
     const string createTablesScript = @"
-        CREATE TABLE IF NOT EXISTS Produtos (
-            Id SERIAL PRIMARY KEY,
-            Nome VARCHAR(255) NOT NULL
+        CREATE TABLE IF NOT EXISTS ""Produtos"" (
+            ""Id"" SERIAL PRIMARY KEY,
+            ""Nome"" VARCHAR(255) NOT NULL
         );
-
-        CREATE TABLE IF NOT EXISTS Itens (
-            Id SERIAL PRIMARY KEY,
-            ProdutoId INT NOT NULL,
-            Qtd INT NOT NULL,
-            UnidadeDeMedida VARCHAR(255) NOT NULL,
-            FOREIGN KEY (ProdutoId) REFERENCES Produtos(Id)
+        CREATE TABLE IF NOT EXISTS ""Itens"" (
+            ""Id"" SERIAL PRIMARY KEY,
+            ""ProdutoId"" INT NOT NULL,
+            ""Qtd"" INT NOT NULL,
+            ""UnidadeDeMedida"" VARCHAR(255) NOT NULL,
+            FOREIGN KEY (""ProdutoId"") REFERENCES ""Produtos""(""Id"")
         );
-
-        CREATE TABLE IF NOT EXISTS Carrinhos (
-            Id SERIAL PRIMARY KEY,
-            Identificador INT NOT NULL
+        CREATE TABLE IF NOT EXISTS ""Carrinhos"" (
+            ""Id"" SERIAL PRIMARY KEY
         );
     ";
 
     await connection.ExecuteAsync(createTablesScript);
 }
+
+app.UseHttpsRedirection();
+app.UseCors(corsPolicy);
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();

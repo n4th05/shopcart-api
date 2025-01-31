@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using ShopCartAPI.Services;
 
 namespace ShopCartAPI.Controllers
 {
@@ -7,98 +7,73 @@ namespace ShopCartAPI.Controllers
     [ApiController]
     public class CarrinhoController : ControllerBase
     {
-        static private List<Carrinho> carrinhos = new List<Carrinho>
+        private readonly ICarrinhoService _carrinhoService;
+
+        public CarrinhoController(ICarrinhoService carrinhoService)
         {
-            new Carrinho
-            {
-                Id = 1,
-                ItensCarrinho = new List<Item>
-                {
-                    new Item { Id = 1, Produto = new Produto { Id = 1, Nome = "Cadeira Gamer" }, UnidadeDeMedida = "unidade", Quantidade = 1 }
-                }
-            },
-            new Carrinho
-            {
-                Id = 2,
-                ItensCarrinho = new List<Item>
-                {
-                    new Item { Id = 2, Produto = new Produto { Id = 2, Nome = "Mouse Sem Fio" }, UnidadeDeMedida = "unidade", Quantidade = 1 }
-                }
-            },
-            new Carrinho
-            {
-                Id = 3,
-                ItensCarrinho = new List<Item>
-                {
-                    new Item { Id = 3, Produto = new Produto { Id = 3, Nome = "Teclado Mecânico" }, UnidadeDeMedida = "unidade", Quantidade = 1 }
-                }
-            },
-            new Carrinho
-            {
-                Id = 4,
-                ItensCarrinho = new List<Item>
-                {
-                    new Item { Id = 4, Produto = new Produto { Id = 4, Nome = "Monitor 4K" }, UnidadeDeMedida = "unidade", Quantidade = 1 }
-                }
-            },
-            new Carrinho
-            {
-                Id = 5,
-                ItensCarrinho = new List<Item>
-                {
-                    new Item { Id = 5, Produto = new Produto { Id = 5, Nome = "Notebook Ultrafino" }, UnidadeDeMedida = "unidade", Quantidade = 1 }
-                }
-            }
-        };
+            _carrinhoService = carrinhoService;
+        }
 
         [HttpGet]
-        public ActionResult<List<Carrinho>> GetCarrinhos()
+        public async Task<ActionResult<IEnumerable<Carrinho>>> GetCarrinhos()
         {
+            var carrinhos = await _carrinhoService.GetAllCarrinhosAsync();
             return Ok(carrinhos);
         }
 
         [HttpGet("{id}")]
-        public ActionResult<Carrinho> GetCarrinhoById(int id)
+        public async Task<ActionResult<Carrinho>> GetCarrinhoById(int id)
         {
-            var carrinho = carrinhos.FirstOrDefault(c => c.Id == id);
-            if (carrinho is null)
+            var carrinho = await _carrinhoService.GetCarrinhoByIdAsync(id);
+            if (carrinho == null)
                 return NotFound();
-
             return Ok(carrinho);
         }
 
         [HttpPost]
-        public ActionResult<Carrinho> AddCarrinho(Carrinho newCarrinho)
+        public async Task<ActionResult<Carrinho>> AddCarrinho(Carrinho carrinho)
         {
-            if (newCarrinho is null)
-                return BadRequest();
-
-            newCarrinho.Id = carrinhos.Max(c => c.Id) + 1;
-            carrinhos.Add(newCarrinho);
-            return CreatedAtAction(nameof(GetCarrinhoById), new { id = newCarrinho.Id }, newCarrinho);
+            try
+            {
+                var createdCarrinho = await _carrinhoService.CreateCarrinhoAsync(carrinho);
+                return CreatedAtAction(
+                    nameof(GetCarrinhoById),
+                    new { id = createdCarrinho.Id },
+                    createdCarrinho
+                );
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdateCarrinho(int id, Carrinho updatesCarrinho)
+        public async Task<IActionResult> UpdateCarrinho(int id, Carrinho carrinho)
         {
-            var carrinho = carrinhos.FirstOrDefault(c => c.Id == id);
-            if (carrinho is null)
+            try
+            {
+                await _carrinhoService.UpdateCarrinhoAsync(id, carrinho);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
                 return NotFound();
-
-            carrinho.ItensCarrinho = updatesCarrinho.ItensCarrinho;
-
-            return NoContent();
+            }
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeleteCarrinho(int id)
+        public async Task<IActionResult> DeleteCarrinho(int id)
         {
-            var carrinho = carrinhos.FirstOrDefault(c => c.Id == id);
-            if (carrinho is null)
+            try
+            {
+                await _carrinhoService.DeleteCarrinhoAsync(id);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
                 return NotFound();
-
-            carrinhos.Remove(carrinho);
-            return NoContent();
+            }
         }
     }
 }

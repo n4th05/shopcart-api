@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Z1TdcJls/Lw=",
+  "dgSpecHash": "9mvQvQnRSUk=",
   "success": true,
-  "projectFilePath": "C:\\Users\\angel\\source\\repos\\ShopCartAPI\\ShopCartAPI\\ShopCartAPI.csproj",
+  "projectFilePath": "C:\\Users\\angel\\Desktop\\t\\shopcart-api\\ShopCartAPI.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\angel\\.nuget\\packages\\dapper\\2.1.35\\dapper.2.1.35.nupkg.sha512",
     "C:\\Users\\angel\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.0\\microsoft.aspnetcore.openapi.9.0.0.nupkg.sha512",
