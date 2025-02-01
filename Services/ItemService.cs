@@ -26,27 +26,39 @@ namespace ShopCartAPI.Services
         {
             using var connection = _connectionFactory.CreateConnection();
             const string sql = @"
-                SELECT 
-                    i.""Id"" AS ItemId, -- Unique alias for Item's Id
-                    i.""Qtd"" AS Quantidade,
-                    i.""UnidadeDeMedida"",
-                    p.""Id"" AS ProdutoId, -- Unique alias for Produto's Id
-                    p.""Nome"" AS ProdutoNome,
-                    c.""Id"" AS CarrinhoId -- Unique alias for Carrinho's Id
-                FROM ""Itens"" i
-                JOIN ""Produtos"" p ON i.""ProdutoId"" = p.""Id""
-                JOIN ""Carrinhos"" c ON i.""CarrinhoId"" = c.""Id""
-            ";
+        SELECT 
+            i.""Id"" AS ""Id"", -- Item's Id
+            i.""Qtd"" AS ""Quantidade"",
+            i.""UnidadeDeMedida"",
+            p.""Id"" AS ""ProdutoId"", -- Flattened alias for Produto.Id
+            p.""Nome"" AS ""ProdutoNome"", -- Flattened alias for Produto.Nome
+            c.""Id"" AS ""CarrinhoId"" -- Flattened alias for Carrinho.Id
+        FROM ""Itens"" i
+        JOIN ""Produtos"" p ON i.""ProdutoId"" = p.""Id""
+        JOIN ""Carrinhos"" c ON i.""CarrinhoId"" = c.""Id""
+    ";
 
-            var result = await connection.QueryAsync<Item, Produto, Carrinho, Item>(
+            var result = await connection.QueryAsync<Item, dynamic, dynamic, Item>(
                 sql,
-                (item, produto, carrinho) =>
+                (item, produtoData, carrinhoData) =>
                 {
-                    item.Produto = produto;
-                    item.Carrinho = carrinho;
+                    // Map Produto
+                    item.Produto = new Produto
+                    {
+                        Id = produtoData.ProdutoId,
+                        Nome = produtoData.ProdutoNome
+                    };
+
+                    // Map Carrinho
+                    item.Carrinho = new Carrinho
+                    {
+                        Id = carrinhoData.CarrinhoId,
+                        ItensCarrinho = new List<Item>() // Initialize as empty list
+                    };
+
                     return item;
                 },
-                splitOn: "ProdutoId,CarrinhoId" 
+                splitOn: "ProdutoId,CarrinhoId" // Split on flattened aliases
             );
 
             return result;
