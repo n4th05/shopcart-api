@@ -5,19 +5,19 @@ namespace ShopCartAPI.Infrastructure.Data
 {
     public interface IDbConnectionFactory
     {
-        IDbConnection CreateConnection();
+        NpgsqlConnection CreateConnection(); // Retorna NpgsqlConnection em vez de IDbConnection
     }
 
-    public class PostgresConnectionFactory : IDbConnectionFactory
+    public class DbConnectionFactory : IDbConnectionFactory
     {
         private readonly string _connectionString;
 
-        public PostgresConnectionFactory(string connectionString)
+        public DbConnectionFactory(IConfiguration configuration)
         {
-            _connectionString = connectionString;
+            _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
 
-        public IDbConnection CreateConnection()
+        public NpgsqlConnection CreateConnection()
         {
             return new NpgsqlConnection(_connectionString);
         }

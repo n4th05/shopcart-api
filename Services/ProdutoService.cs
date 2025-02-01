@@ -1,17 +1,13 @@
 ﻿using Dapper;
 using ShopCartAPI.Infrastructure.Data;
-using System.Data;
+using ShopCartAPI.Models;
+using ShopCartAPI.Services.Interfaces;
 
 namespace ShopCartAPI.Services
 {
-    public class ProdutoService : IProdutoService
+    public class ProdutoService(IDbConnectionFactory connectionFactory) : IProdutoService
     {
-        private readonly IDbConnectionFactory _connectionFactory;
-
-        public ProdutoService(IDbConnectionFactory connectionFactory)
-        {
-            _connectionFactory = connectionFactory;
-        }
+        private readonly IDbConnectionFactory _connectionFactory = connectionFactory;
 
         public async Task<IEnumerable<Produto>> GetAllProdutosAsync()
         {

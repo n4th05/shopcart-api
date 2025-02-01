@@ -9,7 +9,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[ShopCartAPI.Carrinho, ShopCartAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[ShopCartAPI.Models.Carrinho, ShopCartAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -29,13 +29,13 @@
     "Parameters": [
       {
         "Name": "carrinho",
-        "Type": "ShopCartAPI.Carrinho",
+        "Type": "ShopCartAPI.Models.Carrinho",
         "IsRequired": true
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "ShopCartAPI.Carrinho",
+        "Type": "ShopCartAPI.Models.Carrinho",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -61,7 +61,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "ShopCartAPI.Carrinho",
+        "Type": "ShopCartAPI.Models.Carrinho",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -86,7 +86,7 @@
       },
       {
         "Name": "carrinho",
-        "Type": "ShopCartAPI.Carrinho",
+        "Type": "ShopCartAPI.Models.Carrinho",
         "IsRequired": true
       }
     ],
@@ -118,7 +118,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[ShopCartAPI.Item, ShopCartAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[ShopCartAPI.Models.Item, ShopCartAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -138,13 +138,13 @@
     "Parameters": [
       {
         "Name": "newItem",
-        "Type": "ShopCartAPI.Item",
+        "Type": "ShopCartAPI.Models.Item",
         "IsRequired": true
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "ShopCartAPI.Item",
+        "Type": "ShopCartAPI.Models.Item",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -169,7 +169,7 @@
       },
       {
         "Name": "updatedItem",
-        "Type": "ShopCartAPI.Item",
+        "Type": "ShopCartAPI.Models.Item",
         "IsRequired": true
       }
     ],
@@ -201,7 +201,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[ShopCartAPI.Produto, ShopCartAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[ShopCartAPI.Models.Produto, ShopCartAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -221,13 +221,13 @@
     "Parameters": [
       {
         "Name": "produto",
-        "Type": "ShopCartAPI.Produto",
+        "Type": "ShopCartAPI.Models.Produto",
         "IsRequired": true
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "ShopCartAPI.Produto",
+        "Type": "ShopCartAPI.Models.Produto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -253,7 +253,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "ShopCartAPI.Produto",
+        "Type": "ShopCartAPI.Models.Produto",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -278,7 +278,7 @@
       },
       {
         "Name": "produto",
-        "Type": "ShopCartAPI.Produto",
+        "Type": "ShopCartAPI.Models.Produto",
         "IsRequired": true
       }
     ],
@@ -299,26 +299,5 @@
       }
     ],
     "ReturnTypes": []
-  },
-  {
-    "ContainingType": "ShopCartAPI.Controllers.WeatherForecastController",
-    "Method": "Get",
-    "RelativePath": "WeatherForecast",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[ShopCartAPI.WeatherForecast, ShopCartAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ],
-    "EndpointName": "GetWeatherForecast"
   }
 ]

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ShopCartAPI.Services;
+using ShopCartAPI.Models;
+using ShopCartAPI.Services.Interfaces;
 
 namespace ShopCartAPI.Controllers
 {
@@ -24,7 +25,7 @@ namespace ShopCartAPI.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Carrinho>> GetCarrinhoById(int id)
         {
-            var carrinho = await _carrinhoService.GetCarrinhoByIdAsync(id);
+            var carrinho = await _carrinhoService.GetCarrinhoByIdAsync(id, true);
             if (carrinho == null)
                 return NotFound();
             return Ok(carrinho);
@@ -36,11 +37,7 @@ namespace ShopCartAPI.Controllers
             try
             {
                 var createdCarrinho = await _carrinhoService.CreateCarrinhoAsync(carrinho);
-                return CreatedAtAction(
-                    nameof(GetCarrinhoById),
-                    new { id = createdCarrinho.Id },
-                    createdCarrinho
-                );
+                return createdCarrinho;
             }
             catch (KeyNotFoundException ex)
             {

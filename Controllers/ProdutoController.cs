@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ShopCartAPI.Services;
+using ShopCartAPI.Models;
+using ShopCartAPI.Services.Interfaces;
 
 namespace ShopCartAPI.Controllers
 {

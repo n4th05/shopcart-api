@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ShopCartAPI.Services;
 using ShopCartAPI.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using ShopCartAPI.Services.Interfaces;
 
 namespace ShopCartAPI.Controllers
 {

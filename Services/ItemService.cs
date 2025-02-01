@@ -1,8 +1,8 @@
 ﻿using Dapper;
+using Npgsql;
 using ShopCartAPI.Infrastructure.Data;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
+using ShopCartAPI.Models;
+using ShopCartAPI.Services.Interfaces;
 
 namespace ShopCartAPI.Services
 {
@@ -10,36 +10,43 @@ namespace ShopCartAPI.Services
     {
         private readonly IDbConnectionFactory _connectionFactory;
         private readonly IProdutoService _produtoService;
+        private readonly Lazy<ICarrinhoService> _carrinhoService;
 
-        public ItemService(IDbConnectionFactory connectionFactory, IProdutoService produtoService)
+        public ItemService(
+            IDbConnectionFactory connectionFactory,
+            IProdutoService produtoService,
+            Lazy<ICarrinhoService> carrinhoService)
         {
             _connectionFactory = connectionFactory;
             _produtoService = produtoService;
+            _carrinhoService = carrinhoService;
         }
 
         public async Task<IEnumerable<Item>> GetAllItensAsync()
         {
             using var connection = _connectionFactory.CreateConnection();
             const string sql = @"
-        SELECT 
-            i.""Id"" as Id, 
-            i.""Qtd"" as Quantidade, 
-            i.""UnidadeDeMedida"" as UnidadeDeMedida,
-            i.""ProdutoId"" as ProdutoId,
-            p.""Id"" as Produto_Id, -- Id do Produto
-            p.""Nome"" as Nome
-        FROM ""Itens"" i
-        JOIN ""Produtos"" p ON i.""ProdutoId"" = p.""Id""";
+                SELECT 
+                    i.""Id"" AS ItemId, -- Unique alias for Item's Id
+                    i.""Qtd"" AS Quantidade,
+                    i.""UnidadeDeMedida"",
+                    p.""Id"" AS ProdutoId, -- Unique alias for Produto's Id
+                    p.""Nome"" AS ProdutoNome,
+                    c.""Id"" AS CarrinhoId -- Unique alias for Carrinho's Id
+                FROM ""Itens"" i
+                JOIN ""Produtos"" p ON i.""ProdutoId"" = p.""Id""
+                JOIN ""Carrinhos"" c ON i.""CarrinhoId"" = c.""Id""
+            ";
 
-            var result = await connection.QueryAsync<Item, Produto, Item>(
+            var result = await connection.QueryAsync<Item, Produto, Carrinho, Item>(
                 sql,
-                (item, produto) =>
+                (item, produto, carrinho) =>
                 {
-                    Console.WriteLine($"Produto Id: {produto.Id}, Nome: {produto.Nome}"); // Log
                     item.Produto = produto;
+                    item.Carrinho = carrinho;
                     return item;
                 },
-                splitOn: "ProdutoId"
+                splitOn: "ProdutoId,CarrinhoId" 
             );
 
             return result;
@@ -49,20 +56,40 @@ namespace ShopCartAPI.Services
         {
             if (item.Produto == null)
                 throw new ArgumentNullException(nameof(item.Produto), "Produto cannot be null");
+            if (item.Carrinho == null)
+                throw new ArgumentNullException(nameof(item.Carrinho), "Carrinho cannot be null");
+
+            // Verifica se o Produto existe
             var produto = await _produtoService.GetProdutoByIdAsync(item.Produto.Id);
             if (produto == null)
                 throw new KeyNotFoundException($"Produto with id {item.Produto.Id} not found");
+
+            // Verifica se o Carrinho existe
+            var carrinho = await _carrinhoService.Value.GetCarrinhoByIdAsync(item.Carrinho.Id, false);
+            if (carrinho == null)
+                throw new KeyNotFoundException($"Carrinho with id {item.Carrinho.Id} not found");
+
             using var connection = _connectionFactory.CreateConnection();
+
+            // Insere o item
             const string sql = @"
-        INSERT INTO ""Itens"" (""ProdutoId"", ""Qtd"", ""UnidadeDeMedida"")
-        VALUES (@ProdutoId, @Quantidade, @UnidadeDeMedida)";
-            await connection.ExecuteScalarAsync(sql, new
+                INSERT INTO ""Itens"" 
+                    (""ProdutoId"", ""CarrinhoId"", ""Qtd"", ""UnidadeDeMedida"")
+                    VALUES (@ProdutoId, @CarrinhoId, @Quantidade, @UnidadeDeMedida)
+                RETURNING ""Id"";";
+
+            var newId = await connection.ExecuteScalarAsync<int>(sql, new
             {
                 ProdutoId = item.Produto.Id,
+                CarrinhoId = item.Carrinho.Id,
                 item.Quantidade,
                 item.UnidadeDeMedida
             });
+
+            item.Id = newId;
             item.Produto = produto;
+            item.Carrinho = carrinho;
+
             return item;
         }
 
@@ -70,24 +97,33 @@ namespace ShopCartAPI.Services
         {
             if (item.Produto == null)
                 throw new ArgumentNullException(nameof(item.Produto), "Produto cannot be null");
+            if (item.Carrinho == null)
+                throw new ArgumentNullException(nameof(item.Carrinho), "Carrinho cannot be null");
 
-            // Primeiro, busque o produto completo
+            // Verifica se o Produto existe
             var produto = await _produtoService.GetProdutoByIdAsync(item.Produto.Id);
             if (produto == null)
                 throw new KeyNotFoundException($"Produto with id {item.Produto.Id} not found");
 
+            // Verifica se o Carrinho existe
+            var carrinho = await _carrinhoService.Value.GetCarrinhoByIdAsync(item.Carrinho.Id, false);
+            if (carrinho == null)
+                throw new KeyNotFoundException($"Carrinho with id {item.Carrinho.Id} not found");
+
             using var connection = _connectionFactory.CreateConnection();
             const string sql = @"
-        UPDATE ""Itens"" 
-        SET ""ProdutoId"" = @ProdutoId,
-            ""Qtd"" = @Quantidade,
-            ""UnidadeDeMedida"" = @UnidadeDeMedida
-        WHERE ""Id"" = @Id";
+                UPDATE ""Itens"" SET
+                    ""ProdutoId"" = @ProdutoId,
+                    ""CarrinhoId"" = @CarrinhoId,
+                    ""Qtd"" = @Quantidade,
+                    ""UnidadeDeMedida"" = @UnidadeDeMedida
+                WHERE ""Id"" = @Id";
 
             var rowsAffected = await connection.ExecuteAsync(sql, new
             {
                 Id = id,
                 ProdutoId = item.Produto.Id,
+                CarrinhoId = item.Carrinho.Id,
                 item.Quantidade,
                 item.UnidadeDeMedida
             });

@@ -1,4 +1,6 @@
-﻿namespace ShopCartAPI.Services
+﻿using ShopCartAPI.Models;
+
+namespace ShopCartAPI.Services.Interfaces
 {
     public interface IProdutoService
     {

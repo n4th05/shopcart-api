@@ -1,8 +1,7 @@
-﻿using ShopCartAPI.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using Npgsql;
+using ShopCartAPI.Models;
 
-namespace ShopCartAPI.Services
+namespace ShopCartAPI.Services.Interfaces
 {
     public interface IItemService
     {
